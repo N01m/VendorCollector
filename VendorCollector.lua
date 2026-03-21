@@ -15,6 +15,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1)
     elseif event == "MERCHANT_SHOW" then
         VC.BuildMountCache()
         VC.BuildEnsembleSetCache()
+        VC.BuildProfessionCache()
         VC.CreateTabButton()
         VC.CreatePanel()
         eventFrame._merchantOpenTime = GetTime()

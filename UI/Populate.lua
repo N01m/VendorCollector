@@ -205,9 +205,14 @@ function VendorCollector_PopulatePanel()
         elseif not tip.notCollectible then
             local itemID = GetMerchantItemID and GetMerchantItemID(i)
             if itemID and VC.IsCollectibleType(itemID) and not VC.IsItemCollected(i) then
-                local data = GetMerchantItemData(i, playerGold)
-                if data then
-                    uncollected[#uncollected + 1] = data
+                local _, _, _, _, _, classID = GetItemInfoInstant(itemID)
+                local prof = tip.requiresProfession
+                local wrongProf = classID == 9 and prof and VC.playerProfessions and not VC.playerProfessions[prof]
+                if not wrongProf then
+                    local data = GetMerchantItemData(i, playerGold)
+                    if data then
+                        uncollected[#uncollected + 1] = data
+                    end
                 end
             end
         end

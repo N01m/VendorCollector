@@ -17,6 +17,17 @@ VC.BuildEnsembleSetCache = function()
     end
 end
 
+VC.BuildProfessionCache = function()
+    VC.playerProfessions = {}
+    local indices = { GetProfessions() }
+    for _, idx in ipairs(indices) do
+        if idx then
+            local name = GetProfessionInfo(idx)
+            if name then VC.playerProfessions[name:lower()] = true end
+        end
+    end
+end
+
 VC.BuildMountCache = function()
     if mountSpellCache then return end
     mountSpellCache = {}

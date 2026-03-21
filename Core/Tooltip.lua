@@ -32,7 +32,7 @@ VC.ScanTooltip = function(slot)
     local tooltipCache = VC.tooltipCache
     if tooltipCache[slot] then return tooltipCache[slot] end
 
-    local result = { collected = false, locked = false, notCollectible = false, isDecor = false }
+    local result = { collected = false, locked = false, notCollectible = false, isDecor = false, requiresProfession = nil }
 
     if C_TooltipInfo and C_TooltipInfo.GetMerchantItem then
         local ok, data = pcall(C_TooltipInfo.GetMerchantItem, slot)
@@ -59,6 +59,13 @@ VC.ScanTooltip = function(slot)
                 if c and (c.r or 0) > 0.7 and (c.g or 0) < 0.35 then
                     if lt:find("^requires") then
                         result.locked = true
+                        local prof = lt:match("^requires ([^%(]+)")
+                        if prof then
+                            prof = prof:match("^(.-)%s*$")
+                            if prof ~= "" and not prof:match("^level %d") then
+                                result.requiresProfession = prof
+                            end
+                        end
                     end
                 end
             end
@@ -99,7 +106,17 @@ VC.ScanTooltip = function(slot)
                 if not result.locked and L then
                     local r, g = L:GetTextColor()
                     if r and r > 0.7 and (g or 0) < 0.35 then
-                        if lText:lower():find("^requires") then result.locked = true end
+                        local lLow2 = lText:lower()
+                        if lLow2:find("^requires") then
+                            result.locked = true
+                            local prof = lLow2:match("^requires ([^%(]+)")
+                            if prof then
+                                prof = prof:match("^(.-)%s*$")
+                                if prof ~= "" and not prof:match("^level %d") then
+                                    result.requiresProfession = prof
+                                end
+                            end
+                        end
                     end
                 end
             end
