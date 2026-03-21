@@ -198,7 +198,7 @@ function VendorCollector_PopulatePanel()
         if ensembleName then
             if not VC.IsEnsembleCollected(ensembleName) then
                 local data = GetMerchantItemData(i, playerGold)
-                if data and not data.locked then
+                if data then
                     uncollected[#uncollected + 1] = data
                 end
             end
@@ -206,7 +206,7 @@ function VendorCollector_PopulatePanel()
             local itemID = GetMerchantItemID and GetMerchantItemID(i)
             if itemID and VC.IsCollectibleType(itemID) and not VC.IsItemCollected(i) then
                 local data = GetMerchantItemData(i, playerGold)
-                if data and not data.locked then
+                if data then
                     uncollected[#uncollected + 1] = data
                 end
             end
@@ -255,7 +255,7 @@ function VendorCollector_PopulatePanel()
         if row.lockTex  then row.lockTex:SetShown(item.locked) end
         if row.ownedTex then row.ownedTex:SetShown(false)      end
 
-        local priceStr = FormatItemPrice(item, currencyTotals)
+        local priceStr = FormatItemPrice(item, not item.locked and currencyTotals or nil)
         if item.price and item.price > 0 and item.buyable and not item.extendedCost then
             totalCost = totalCost + item.price
         end
@@ -296,33 +296,24 @@ function VendorCollector_PopulatePanel()
     panel.title:SetText("VendorCollector  |cffaaaaaa" .. #uncollected .. " uncollected|r")
 
     local lines = {}
+    local sep = " |cffaaaaaa·|r "
 
     if totalCost > 0 then
-        local have = playerGold
-        local diff = have - totalCost
-        lines[#lines + 1] = "|cffaaaaaaCost:|r |cffffff00" .. VC.FormatMoneyPlain(totalCost) .. "|r"
-        lines[#lines + 1] = "|cffaaaaaaHave:|r " .. VC.FormatMoneyPlain(have)
-        if diff >= 0 then
-            lines[#lines + 1] = "|cffaaaaaaLeft:|r |cff44cc44" .. VC.FormatMoneyPlain(diff) .. "|r"
-        else
-            lines[#lines + 1] = "|cffaaaaaaNeed:|r |cffff4444" .. VC.FormatMoneyPlain(-diff) .. "|r"
-        end
+        local have    = playerGold
+        local haveCol = have >= totalCost and "|cff44cc44" or "|cffff4444"
+        lines[#lines + 1] = "|cffffff00" .. VC.FormatMoneyPlain(totalCost) .. "|r"
+            .. sep .. haveCol .. "have " .. VC.FormatMoneyPlain(have) .. "|r"
     end
 
     for _, data in pairs(currencyTotals) do
         local tag     = data.name or "Currency"
         local balance = VC.GetCurrencyBalance(data.link)
-        if #lines > 0 then lines[#lines + 1] = " " end
-        lines[#lines + 1] = "|cffaaaaaaCost:|r |cffffff00" .. data.total .. " " .. tag .. "|r"
+        local line    = "|cffffff00" .. data.total .. "|r " .. tag
         if balance then
-            local diff = balance - data.total
-            lines[#lines + 1] = "|cffaaaaaaHave:|r " .. balance .. " " .. tag
-            if diff >= 0 then
-                lines[#lines + 1] = "|cffaaaaaaLeft:|r |cff44cc44" .. diff .. " " .. tag .. "|r"
-            else
-                lines[#lines + 1] = "|cffaaaaaaNeed:|r |cffff4444" .. (-diff) .. " " .. tag .. "|r"
-            end
+            local haveCol = balance >= data.total and "|cff44cc44" or "|cffff4444"
+            line = line .. sep .. haveCol .. "have " .. balance .. "|r"
         end
+        lines[#lines + 1] = line
     end
 
     panel.totalLbl:SetText(table.concat(lines, "\n"))
