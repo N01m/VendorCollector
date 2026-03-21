@@ -1,0 +1,14 @@
+## Interface: 120001
+## Title: VendorCollector
+## Notes: Shows uncollected items (mounts, transmog, toys, heirlooms, pets) at vendors with buyable items highlighted.
+## Author:
+## Version: 1.1.0
+## SavedVariables: VendorCollectorDB
+
+Core\Constants.lua
+Core\Tooltip.lua
+Core\Collection.lua
+Core\Currency.lua
+UI\Panel.lua
+UI\Populate.lua
+VendorCollector.lua
