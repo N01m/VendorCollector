@@ -97,8 +97,13 @@ VC.IsItemCollected = function(merchantIndex)
     if spellID and mountSpellCache and mountSpellCache[spellID] then return true end
 
     if C_HousingCatalog and C_HousingCatalog.GetCatalogEntryInfoByItem then
-        local ok, info = pcall(C_HousingCatalog.GetCatalogEntryInfoByItem, itemID, true)
-        if ok and info and info.quantity and info.quantity > 0 then return true end
+        local base = C_HousingCatalog.GetCatalogEntryInfoByItem(itemID, false)
+        if base and base.entryID then
+            local info = C_HousingCatalog.GetCatalogEntryInfoByRecordID(
+                base.entryID.entryType, base.entryID.recordID, true
+            )
+            if info and info.firstAcquisitionBonus == 0 then return true end
+        end
     end
 
     local tip = VC.ScanTooltip(merchantIndex)
