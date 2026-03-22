@@ -9,8 +9,8 @@ VC.BuildEnsembleSetCache = function()
     local ok, sets = pcall(C_TransmogSets.GetUsableSets)
     if not ok or not sets then return end
     for _, setInfo in ipairs(sets) do
-        if setInfo.name and setInfo.setID then
-            ensembleSetCache[setInfo.name:lower()] = setInfo.setID
+        if setInfo.name then
+            ensembleSetCache[setInfo.name:lower()] = setInfo.collected or false
         end
     end
 end
@@ -46,9 +46,13 @@ VC.IsCollectibleType = function(itemID)
         if mountID and mountID > 0 then return true end
     end
 
+    if C_PetJournal and C_PetJournal.GetPetInfoByItemID then
+        local name = C_PetJournal.GetPetInfoByItemID(itemID)
+        if name then return true end
+    end
+
     local _, _, _, _, _, classID, subClassID = GetItemInfoInstant(itemID)
     if classID == 15 and subClassID == 2 then return true end
-    if classID == 9 then return true end
 
     if C_HousingCatalog and C_HousingCatalog.GetCatalogEntryInfoByItem then
         local ok, info = pcall(C_HousingCatalog.GetCatalogEntryInfoByItem, itemID, false)
@@ -80,6 +84,14 @@ VC.IsItemCollected = function(merchantIndex)
         if mountID and mountID > 0 then
             local _, _, _, _, _, _, _, _, _, _, isCollected = C_MountJournal.GetMountInfoByID(mountID)
             if isCollected then return true end
+        end
+    end
+
+    if C_PetJournal and C_PetJournal.GetPetInfoByItemID then
+        local _, _, _, _, _, _, _, _, _, _, _, _, speciesID = C_PetJournal.GetPetInfoByItemID(itemID)
+        if speciesID then
+            local numCollected = C_PetJournal.GetNumCollectedInfo(speciesID)
+            if numCollected and numCollected > 0 then return true end
         end
     end
 
@@ -136,12 +148,7 @@ VC.IsEnsembleCollected = function(name)
     if not name or not ensembleSetCache then return nil end
     local setName = name:match("^Ensemble:%s*(.+)$")
     if not setName then return nil end
-    local setID = ensembleSetCache[setName:lower()]
-    if not setID then return nil end
-    local ok, items = pcall(C_TransmogSets.GetItems, setID)
-    if not ok or not items or #items == 0 then return nil end
-    for _, source in ipairs(items) do
-        if not source.isCollected then return false end
-    end
-    return true
+    local cached = ensembleSetCache[setName:lower()]
+    if cached == nil then return nil end
+    return cached
 end
