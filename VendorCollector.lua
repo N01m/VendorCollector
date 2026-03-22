@@ -13,7 +13,6 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1)
         eventFrame:UnregisterEvent("ADDON_LOADED")
 
     elseif event == "MERCHANT_SHOW" then
-        VC.BuildMountCache()
         VC.BuildEnsembleSetCache()
         VC.BuildProfessionCache()
         VC.CreateTabButton()

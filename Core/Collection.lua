@@ -1,7 +1,5 @@
 local VC = VC
 
-local mountSpellCache  = nil
-local mountAllSpells   = nil
 local ensembleSetCache = nil
 
 VC.BuildEnsembleSetCache = function()
@@ -28,22 +26,6 @@ VC.BuildProfessionCache = function()
     end
 end
 
-VC.BuildMountCache = function()
-    if mountSpellCache then return end
-    mountSpellCache = {}
-    mountAllSpells  = {}
-    local ids = C_MountJournal.GetMountIDs()
-    for _, mountID in ipairs(ids) do
-        local _, spellID, _, _, _, _, _, _, _, _, isCollected = C_MountJournal.GetMountInfoByID(mountID)
-        if spellID then
-            mountAllSpells[spellID] = true
-            if isCollected then
-                mountSpellCache[spellID] = true
-            end
-        end
-    end
-end
-
 VC.IsCollectibleType = function(itemID)
     if not itemID then return false end
 
@@ -59,9 +41,9 @@ VC.IsCollectibleType = function(itemID)
     end
     if C_Heirloom and C_Heirloom.PlayerHasHeirloom(itemID) then return true end
 
-    local _, spellID = GetItemSpell(itemID)
-    if spellID and mountAllSpells then
-        if mountAllSpells[spellID] then return true end
+    if C_MountJournal and C_MountJournal.GetMountFromItem then
+        local mountID = C_MountJournal.GetMountFromItem(itemID)
+        if mountID and mountID > 0 then return true end
     end
 
     local _, _, _, _, _, classID, subClassID = GetItemInfoInstant(itemID)
@@ -93,8 +75,13 @@ VC.IsItemCollected = function(merchantIndex)
         if ok and result then return true end
     end
 
-    local _, spellID = GetItemSpell(itemID)
-    if spellID and mountSpellCache and mountSpellCache[spellID] then return true end
+    if C_MountJournal and C_MountJournal.GetMountFromItem then
+        local mountID = C_MountJournal.GetMountFromItem(itemID)
+        if mountID and mountID > 0 then
+            local _, _, _, _, _, _, _, _, _, _, isCollected = C_MountJournal.GetMountInfoByID(mountID)
+            if isCollected then return true end
+        end
+    end
 
     if C_HousingCatalog and C_HousingCatalog.GetCatalogEntryInfoByItem then
         local base = C_HousingCatalog.GetCatalogEntryInfoByItem(itemID, false)
