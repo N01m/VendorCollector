@@ -129,6 +129,28 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1)
                 C_Timer.After(0, VendorCollector_PopulatePanel)
             end
         end
+        local attempts = 0
+        local function WaitAndRepopulate()
+            attempts = attempts + 1
+            if attempts > 100 then return end -- hard cap at ~5s
+            local panel = VC.panel
+            if not panel or not panel:IsShown() then return end
+            local total = GetMerchantNumItems and GetMerchantNumItems() or 0
+            for i = 1, total do
+                local itemID = GetMerchantItemID and GetMerchantItemID(i)
+                if not itemID then
+                    C_Timer.After(0.05, WaitAndRepopulate)
+                    return
+                end
+                local name = GetItemInfoInstant and GetItemInfoInstant(itemID)
+                if not name then
+                    C_Timer.After(0.05, WaitAndRepopulate)
+                    return
+                end
+            end
+            VendorCollector_PopulatePanel()
+        end
+        C_Timer.After(0.05, WaitAndRepopulate)
 
     elseif event == "MERCHANT_CLOSED" then
         local panel  = VC.panel

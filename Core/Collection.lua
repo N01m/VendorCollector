@@ -101,7 +101,7 @@ VC.IsItemCollected = function(merchantIndex)
             local info = C_HousingCatalog.GetCatalogEntryInfoByRecordID(
                 base.entryID.entryType, base.entryID.recordID, true
             )
-            if info and info.quantity and info.quantity > 0 then return true end
+            if info and ((info.quantity and info.quantity > 0) or (info.numPlaced and info.numPlaced > 0)) then return true end
         end
     end
 
