@@ -96,12 +96,20 @@ VC.IsItemCollected = function(merchantIndex)
     end
 
     if C_HousingCatalog and C_HousingCatalog.GetCatalogEntryInfoByItem then
-        local base = C_HousingCatalog.GetCatalogEntryInfoByItem(itemID, false)
-        if base and base.entryID then
-            local info = C_HousingCatalog.GetCatalogEntryInfoByRecordID(
+        local ok, base = pcall(C_HousingCatalog.GetCatalogEntryInfoByItem, itemID, false)
+        if ok and base and base.entryID then
+            local ok2, info = pcall(C_HousingCatalog.GetCatalogEntryInfoByRecordID,
                 base.entryID.entryType, base.entryID.recordID, true
             )
-            if info and ((info.quantity and info.quantity > 0) or (info.numPlaced and info.numPlaced > 0)) then return true end
+            if ok2 and info then
+                if type(info.isOwned) == "boolean" then return info.isOwned end
+                if type(info.isCollected) == "boolean" then return info.isCollected end
+                if info.firstAcquisitionBonus == 0 then return true end
+                if (tonumber(info.quantity) or 0) + (tonumber(info.numPlaced) or 0)
+                 + (tonumber(info.remainingRedeemable) or 0) > 0 then
+                    return true
+                end
+            end
         end
     end
 

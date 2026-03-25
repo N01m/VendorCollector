@@ -97,6 +97,37 @@ eventFrame:RegisterEvent("TRANSMOG_COLLECTION_UPDATED")
 eventFrame:RegisterEvent("MOUNT_JOURNAL_USABILITY_CHANGED")
 eventFrame:RegisterEvent("NEW_MOUNT_ADDED")
 eventFrame:RegisterEvent("PET_JOURNAL_LIST_UPDATE")
+eventFrame:RegisterEvent("HOUSING_MARKET_AVAILABILITY_UPDATED")
+eventFrame:RegisterEvent("HOUSE_DECOR_ADDED_TO_CHEST")
+eventFrame:RegisterEvent("PLAYER_LOGIN")
+if C_EventUtils and C_EventUtils.IsEventValid then
+    if C_EventUtils.IsEventValid("HOUSING_COLLECTION_UPDATED") then
+        eventFrame:RegisterEvent("HOUSING_COLLECTION_UPDATED")
+    end
+    if C_EventUtils.IsEventValid("HOUSING_DECOR_ITEM_LEARNED") then
+        eventFrame:RegisterEvent("HOUSING_DECOR_ITEM_LEARNED")
+    end
+else
+    pcall(eventFrame.RegisterEvent, eventFrame, "HOUSING_COLLECTION_UPDATED")
+    pcall(eventFrame.RegisterEvent, eventFrame, "HOUSING_DECOR_ITEM_LEARNED")
+end
+
+-- warm the housing catalog so ownership fields are populated
+local function WarmHousingCatalog()
+    if not C_HousingCatalog or not C_HousingCatalog.CreateCatalogSearcher then return end
+    local searcher = C_HousingCatalog.CreateCatalogSearcher()
+    if not searcher then return end
+    if searcher.SetOwnedOnly then searcher:SetOwnedOnly(false) end
+    if searcher.SetCollected then searcher:SetCollected(true) end
+    if searcher.SetUncollected then searcher:SetUncollected(true) end
+    if searcher.SetAutoUpdateOnParamChanges then searcher:SetAutoUpdateOnParamChanges(false) end
+    if searcher.SetResultsUpdatedCallback then
+        searcher:SetResultsUpdatedCallback(function()
+            VC._housingCatalogReady = true
+        end)
+    end
+    if searcher.RunSearch then searcher:RunSearch() end
+end
 
 eventFrame:SetScript("OnEvent", function(_, event, arg1)
     if event == "ADDON_LOADED" then
@@ -104,42 +135,43 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1)
         VendorCollectorDB = VendorCollectorDB or {}
         eventFrame:UnregisterEvent("ADDON_LOADED")
 
+    elseif event == "PLAYER_LOGIN" then
+        C_Timer.After(0, WarmHousingCatalog)
+        eventFrame:UnregisterEvent("PLAYER_LOGIN")
+
     elseif event == "MERCHANT_SHOW" then
         VC.BuildEnsembleSetCache()
         VC.BuildProfessionCache()
         VC.CreateTabButton()
         VC.CreatePanel()
+        if not VC._housingCatalogReady then WarmHousingCatalog() end
+        if C_HousingCatalog and C_HousingCatalog.RequestHousingMarketInfoRefresh then
+            C_HousingCatalog.RequestHousingMarketInfoRefresh()
+        end
         eventFrame._merchantOpenTime = GetTime()
         local panel  = VC.panel
         local tabBtn = VC.tabBtn
+        local wantAutoOpen = VendorCollectorDB.autoOpen and not panel:IsShown()
         if tabBtn then
             tabBtn:Show()
-            if VendorCollectorDB.autoOpen and not panel:IsShown() then
-                C_Timer.After(0, function()
-                    panel.scrollFrame:SetVerticalScroll(0)
-                    VendorCollector_PopulatePanel()
-                    if panel._hasItems then
-                        local mh = MerchantFrame:GetHeight()
-                        panel:SetHeight(mh > 0 and mh or VC.PANEL_H)
-                        panel:ClearAllPoints()
-                        panel:SetPoint("TOPLEFT", MerchantFrame, "TOPRIGHT", 0, 0)
-                        panel:Show()
-                        PanelTemplates_SelectTab(tabBtn)
-                        tabBtn:Enable()
-                        tabBtn:SetNormalFontObject(GameFontHighlightSmall)
-                    end
-                end)
-            elseif panel:IsShown() then
+            if panel:IsShown() then
                 panel.scrollFrame:SetVerticalScroll(0)
-                C_Timer.After(0, VendorCollector_PopulatePanel)
             end
         end
         local attempts = 0
+        local MIN_ATTEMPTS = 10 -- minimum 0.5s delay for collection APIs to load
         local function WaitAndRepopulate()
             attempts = attempts + 1
             if attempts > 100 then return end -- hard cap at ~5s
             local panel = VC.panel
-            if not panel or not panel:IsShown() then return end
+            if not panel then return end
+            -- if not auto-opening, require panel to already be shown
+            if not wantAutoOpen and not panel:IsShown() then return end
+            -- enforce minimum wait for collection APIs
+            if attempts < MIN_ATTEMPTS then
+                C_Timer.After(0.05, WaitAndRepopulate)
+                return
+            end
             local total = GetMerchantNumItems and GetMerchantNumItems() or 0
             for i = 1, total do
                 local itemID = GetMerchantItemID and GetMerchantItemID(i)
@@ -161,6 +193,19 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1)
                 end
             end
             VendorCollector_PopulatePanel()
+            -- auto-open: show panel after first valid populate
+            if wantAutoOpen and not panel:IsShown() and panel._hasItems then
+                panel.scrollFrame:SetVerticalScroll(0)
+                local mh = MerchantFrame:GetHeight()
+                panel:SetHeight(mh > 0 and mh or VC.PANEL_H)
+                panel:ClearAllPoints()
+                panel:SetPoint("TOPLEFT", MerchantFrame, "TOPRIGHT", 0, 0)
+                panel:Show()
+                PanelTemplates_SelectTab(tabBtn)
+                tabBtn:Enable()
+                tabBtn:SetNormalFontObject(GameFontHighlightSmall)
+                wantAutoOpen = false
+            end
         end
         C_Timer.After(0.05, WaitAndRepopulate)
 
@@ -192,6 +237,10 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1)
         or event == "MOUNT_JOURNAL_USABILITY_CHANGED"
         or event == "NEW_MOUNT_ADDED"
         or event == "PET_JOURNAL_LIST_UPDATE"
+        or event == "HOUSING_MARKET_AVAILABILITY_UPDATED"
+        or event == "HOUSE_DECOR_ADDED_TO_CHEST"
+        or event == "HOUSING_COLLECTION_UPDATED"
+        or event == "HOUSING_DECOR_ITEM_LEARNED"
     then
         local panel = VC.panel
         if panel and panel:IsShown() and not eventFrame._pendingCollectionRefresh then
