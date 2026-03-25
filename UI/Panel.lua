@@ -160,7 +160,7 @@ VC.CreatePanel = function()
                 if not ok and C_MerchantFrame and C_MerchantFrame.BuyItem then
                     pcall(C_MerchantFrame.BuyItem, self.merchantIndex, 1)
                 end
-                C_Timer.After(0.1, VendorCollector_PopulatePanel)
+                C_Timer.After(1, VendorCollector_PopulatePanel)
             else
                 local dialog = StaticPopup_Show("VENDORCOLLECTOR_BUY_CONFIRM",
                     self.itemName or "?", self.priceStr or "")

@@ -92,6 +92,11 @@ eventFrame:RegisterEvent("ADDON_LOADED")
 eventFrame:RegisterEvent("MERCHANT_SHOW")
 eventFrame:RegisterEvent("MERCHANT_CLOSED")
 eventFrame:RegisterEvent("GET_ITEM_INFO_RECEIVED")
+eventFrame:RegisterEvent("NEW_TOY_ADDED")
+eventFrame:RegisterEvent("TRANSMOG_COLLECTION_UPDATED")
+eventFrame:RegisterEvent("MOUNT_JOURNAL_USABILITY_CHANGED")
+eventFrame:RegisterEvent("NEW_MOUNT_ADDED")
+eventFrame:RegisterEvent("PET_JOURNAL_LIST_UPDATE")
 
 eventFrame:SetScript("OnEvent", function(_, event, arg1)
     if event == "ADDON_LOADED" then
@@ -142,10 +147,17 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1)
                     C_Timer.After(0.05, WaitAndRepopulate)
                     return
                 end
-                local name = GetItemInfoInstant and GetItemInfoInstant(itemID)
+                local name, _, _, _, _, classID = GetItemInfoInstant and GetItemInfoInstant(itemID)
                 if not name then
                     C_Timer.After(0.05, WaitAndRepopulate)
                     return
+                end
+                if classID == 20 and C_HousingCatalog and C_HousingCatalog.GetCatalogEntryInfoByItem then
+                    local ok, info = pcall(C_HousingCatalog.GetCatalogEntryInfoByItem, itemID, false)
+                    if not ok or not info then
+                        C_Timer.After(0.05, WaitAndRepopulate)
+                        return
+                    end
                 end
             end
             VendorCollector_PopulatePanel()
@@ -169,6 +181,23 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1)
             eventFrame._pendingRefresh = true
             C_Timer.After(0.5, function()
                 eventFrame._pendingRefresh = nil
+                if panel and panel:IsShown() then
+                    VendorCollector_PopulatePanel()
+                end
+            end)
+        end
+
+    elseif event == "NEW_TOY_ADDED"
+        or event == "TRANSMOG_COLLECTION_UPDATED"
+        or event == "MOUNT_JOURNAL_USABILITY_CHANGED"
+        or event == "NEW_MOUNT_ADDED"
+        or event == "PET_JOURNAL_LIST_UPDATE"
+    then
+        local panel = VC.panel
+        if panel and panel:IsShown() and not eventFrame._pendingCollectionRefresh then
+            eventFrame._pendingCollectionRefresh = true
+            C_Timer.After(0.1, function()
+                eventFrame._pendingCollectionRefresh = nil
                 if panel and panel:IsShown() then
                     VendorCollector_PopulatePanel()
                 end

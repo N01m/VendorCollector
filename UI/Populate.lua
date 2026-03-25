@@ -36,7 +36,7 @@ StaticPopupDialogs["VENDORCOLLECTOR_BUY_CONFIRM"] = {
         if not ok and C_MerchantFrame and C_MerchantFrame.BuyItem then
             pcall(C_MerchantFrame.BuyItem, d.index, 1)
         end
-        C_Timer.After(0.1, VendorCollector_PopulatePanel)
+        C_Timer.After(1, VendorCollector_PopulatePanel)
     end,
     timeout      = 0,
     whileDead    = false,
