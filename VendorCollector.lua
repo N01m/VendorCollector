@@ -248,6 +248,8 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1)
             C_Timer.After(0.1, function()
                 eventFrame._pendingCollectionRefresh = nil
                 if panel and panel:IsShown() then
+                    VC.InvalidateEnsembleSetCache()
+                    VC.BuildEnsembleSetCache()
                     VendorCollector_PopulatePanel()
                 end
             end)

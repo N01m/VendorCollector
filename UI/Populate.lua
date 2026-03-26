@@ -306,17 +306,17 @@ function VendorCollector_PopulatePanel()
     if totalCost > 0 then
         local have    = playerGold
         local haveCol = have >= totalCost and "|cff44cc44" or "|cffff4444"
-        lines[#lines + 1] = "|cffffff00" .. VC.FormatMoneyPlain(totalCost) .. "|r"
-            .. sep .. haveCol .. "have " .. VC.FormatMoneyPlain(have) .. "|r"
+        lines[#lines + 1] = "You need |cffffff00" .. VC.FormatMoneyPlain(totalCost) .. "|r"
+            .. sep .. haveCol .. "you have " .. VC.FormatMoneyPlain(have) .. "|r"
     end
 
     for _, data in pairs(currencyTotals) do
         local tag     = data.name or "Currency"
         local balance = VC.GetCurrencyBalance(data.link)
-        local line    = "|cffffff00" .. data.total .. "|r " .. tag
+        local line    = "You need |cffffff00" .. data.total .. "|r " .. tag
         if balance then
             local haveCol = balance >= data.total and "|cff44cc44" or "|cffff4444"
-            line = line .. sep .. haveCol .. "have " .. balance .. "|r"
+            line = line .. sep .. haveCol .. "you have " .. balance .. "|r"
         end
         lines[#lines + 1] = line
     end

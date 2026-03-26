@@ -15,6 +15,10 @@ VC.BuildEnsembleSetCache = function()
     end
 end
 
+VC.InvalidateEnsembleSetCache = function()
+    ensembleSetCache = nil
+end
+
 VC.BuildProfessionCache = function()
     VC.playerProfessions = {}
     local indices = { GetProfessions() }
