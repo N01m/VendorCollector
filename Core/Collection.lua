@@ -106,9 +106,24 @@ VC.IsItemCollected = function(merchantIndex)
                 if type(info.isOwned) == "boolean" then return info.isOwned end
                 if type(info.isCollected) == "boolean" then return info.isCollected end
                 if info.firstAcquisitionBonus == 0 then return true end
-                if (tonumber(info.quantity) or 0) + (tonumber(info.numPlaced) or 0)
-                 + (tonumber(info.remainingRedeemable) or 0) > 0 then
-                    return true
+                local qty = (tonumber(info.quantity) or 0) + (tonumber(info.numPlaced) or 0)
+                          + (tonumber(info.remainingRedeemable) or 0)
+                if qty > 0 and qty < 1000000 then return true end
+            end
+        end
+        -- fallback: parse owned count from item tooltip
+        if C_TooltipInfo and C_TooltipInfo.GetOwnedItemByID then
+            local ok3, tooltip = pcall(C_TooltipInfo.GetOwnedItemByID, itemID)
+            if ok3 and tooltip and tooltip.lines then
+                for _, line in ipairs(tooltip.lines) do
+                    local lt = line.leftText
+                    if lt then
+                        local lower = lt:lower()
+                        if lower:find("^owned") then
+                            local count = tonumber(lt:match("(%d+)"))
+                            if count and count > 0 then return true end
+                        end
+                    end
                 end
             end
         end
