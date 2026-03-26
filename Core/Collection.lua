@@ -51,8 +51,9 @@ VC.IsCollectibleType = function(itemID)
         if name then return true end
     end
 
-    local _, _, _, _, _, classID, subClassID = GetItemInfoInstant(itemID)
+    local itemName, _, _, _, _, classID, subClassID = GetItemInfoInstant(itemID)
     if classID == 15 and subClassID == 2 then return true end
+    if itemName and itemName:find("^Illusion:") then return true end
 
     if C_HousingCatalog and C_HousingCatalog.GetCatalogEntryInfoByItem then
         local ok, info = pcall(C_HousingCatalog.GetCatalogEntryInfoByItem, itemID, false)
